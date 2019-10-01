@@ -9,7 +9,7 @@ open Time;;
  * need to bother with handling ranges. Once we begin having a view of the world,
  * we will always continue to have _some_ view of the world.
  *)
-module type Temporal = sig
+module type History = sig
   module type Value = sig
     type time
     type 'a history
@@ -23,7 +23,7 @@ module type Temporal = sig
   module Make (T : Time) : Value with type time = T.time
 end
 
-module Temporal : Temporal = struct
+module MapHistory : History = struct
   module type Value = sig
     type time
     type 'a history
