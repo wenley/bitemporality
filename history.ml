@@ -23,7 +23,7 @@ module type History = sig
   module Make (T : Time) : Value with type time = T.time
 end
 
-module MapHistory : History = struct
+module BaseHistory = struct
   module type Value = sig
     type time
     type 'a history
@@ -32,17 +32,11 @@ module MapHistory : History = struct
     val at_time : 'a history -> time -> 'a option
     val at_now : 'a history -> 'a option
     val set_now : 'a history -> 'a -> 'a history
-
-    (* This API is insufficient; does not allow for specifying arbitrary
-    time-ranges for values; caller needs to reconstruct that API from these
-    primitives *)
   end
+end
 
-  module type Time = sig
-    type time
-    val compare : time -> time -> int
-    val current_time : unit -> time
-  end
+module MapHistory : History = struct
+  include BaseHistory
 
   module Make (T:Time) : (Value with type time = T.time) = struct
     module TimeOrd : (Map.OrderedType with type t = T.time) = struct
@@ -68,4 +62,4 @@ module MapHistory : History = struct
       TMap.add time value timeline
     let set_now timeline value = set_at timeline value (current_time ())
   end
-end;;
+end
