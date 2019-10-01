@@ -25,11 +25,6 @@ module Bitemporal = struct
 
     val at_time : transaction_time -> effective_time -> 'a bitemporal -> 'a option
     val current_value : 'a bitemporal -> 'a option
-    (* To be implemented: *)
-    (*
-     * val value_at : effective_time -> 'a bitemporal -> 'a option
-     * val historical_view_value : transaction_time -> 'a bitemporal -> 'a option
-     *)
 
     val set_for_range : (effective_time * effective_time) -> 'a option -> 'a bitemporal -> 'a bitemporal
     val set_starting_at : effective_time -> 'a option -> 'a bitemporal -> 'a bitemporal

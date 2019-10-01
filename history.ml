@@ -51,15 +51,17 @@ module MapHistory : History = struct
 
     let empty = TMap.empty
     let current_time = T.current_time
-    let at_time timeline time =
-      let result = TMap.find_last_opt (fun key_time -> key_time < time) timeline in
+    let at_time history time =
+      let result = TMap.find_last_opt (fun key_time -> key_time < time) history in
       match result with
-      | Some(effective_since, value) -> Some(value)
+      | Some(appended_at, value) -> Some(value)
       | None -> None
-    let at_now timeline = at_time timeline (current_time ())
+    let at_now history = at_time history (current_time ())
 
-    let set_at timeline value time =
-      TMap.add time value timeline
-    let set_now timeline value = set_at timeline value (current_time ())
+    (* Maybe-private method; useful also for reconstructing from serialized format *)
+    let set_at history value time =
+      TMap.add time value history
+
+    let set_now history value = set_at history value (current_time ())
   end
 end
