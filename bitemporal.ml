@@ -42,7 +42,7 @@ module Bitemporal = struct
     type time = T.time
     type effective_time = Effective of time
     type transaction_time = Transaction of time
-    type 'a bitemporal = ('a Effective.timeline) Transacted.timed
+    type 'a bitemporal = ('a Effective.timeline) Transacted.history
 
     let empty = Transacted.empty
 

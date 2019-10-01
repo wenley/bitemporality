@@ -12,12 +12,12 @@ open Time;;
 module type Temporal = sig
   module type Value = sig
     type time
-    type 'a timed
-    val empty : 'a timed
+    type 'a history
+    val empty : 'a history
     val current_time : unit -> time
-    val at_time : 'a timed -> time -> 'a option
-    val at_now : 'a timed -> 'a option
-    val set_now : 'a timed -> 'a -> 'a timed
+    val at_time : 'a history -> time -> 'a option
+    val at_now : 'a history -> 'a option
+    val set_now : 'a history -> 'a -> 'a history
   end
 
   module Make (T : Time) : Value with type time = T.time
@@ -26,12 +26,12 @@ end
 module Temporal : Temporal = struct
   module type Value = sig
     type time
-    type 'a timed
-    val empty : 'a timed
+    type 'a history
+    val empty : 'a history
     val current_time : unit -> time
-    val at_time : 'a timed -> time -> 'a option
-    val at_now : 'a timed -> 'a option
-    val set_now : 'a timed -> 'a -> 'a timed
+    val at_time : 'a history -> time -> 'a option
+    val at_now : 'a history -> 'a option
+    val set_now : 'a history -> 'a -> 'a history
 
     (* This API is insufficient; does not allow for specifying arbitrary
     time-ranges for values; caller needs to reconstruct that API from these
@@ -53,7 +53,7 @@ module Temporal : Temporal = struct
     module TMap : (Map.S with type key = T.time) = Map.Make(TimeOrd)
 
     type time = T.time
-    type 'a timed = 'a TMap.t
+    type 'a history = 'a TMap.t
 
     let empty = TMap.empty
     let current_time = T.current_time
