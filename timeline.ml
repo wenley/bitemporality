@@ -15,6 +15,19 @@ module type Timeline = sig
   module Make (T:Time) : (Value with type time = T.time)
 end
 
+module BaseTimeline = struct
+  module type Value = sig
+    type time
+    type 'a timeline
+
+    val empty : 'a timeline
+    val at_time : time -> 'a timeline -> 'a option
+    val current_value : 'a timeline -> 'a option
+
+    val set_for_range : (time * time) -> 'a option -> 'a timeline -> 'a timeline
+  end
+end
+
 (**
  * This implements arbitrary history rewriting, as well as having sections of
  * time where no value exists.
@@ -32,16 +45,7 @@ end
  * the current, simpler `TRangeMap.find`).
  *)
 module MapTimeline : Timeline = struct
-  module type Value = sig
-    type time
-    type 'a timeline
-
-    val empty : 'a timeline
-    val at_time : time -> 'a timeline -> 'a option
-    val current_value : 'a timeline -> 'a option
-
-    val set_for_range : (time * time) -> 'a option -> 'a timeline -> 'a timeline
-  end
+  include BaseTimeline
 
   module Make (T:Time) : (Value with type time = T.time) = struct
     module TimeRangeOrd : (Map.OrderedType with type t = (T.time * T.time)) = struct
