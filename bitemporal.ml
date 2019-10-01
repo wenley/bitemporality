@@ -1,3 +1,6 @@
+open Time;;
+open Temporal;;
+open Effective_dating;;
 (**
  * Work in Progress, but fleshes out a couple tricky challenges.
  *
@@ -39,13 +42,13 @@ module Bitemporal = struct
     type time = T.time
     type effective_time = Effective of time
     type transaction_time = Transaction of time
-    type 'a bitemporal = ('a Effective.t) Transacted.t
+    type 'a bitemporal = ('a Effective.timeline) Transacted.timed
 
     let empty = Transacted.empty
 
     let at_time (transaction_time : transaction_time) (effective_time : effective_time) (timeline : 'a bitemporal) =
       let Transaction(ttime) = transaction_time in
-      match Transacted.at_time ttime with
+      match Transacted.at_time timeline ttime with
       | Some(timeline) ->
           let Effective(etime) = effective_time in
           Effective.at_time etime timeline
@@ -61,12 +64,15 @@ module Bitemporal = struct
       let (Effective(effective_start), Effective(effective_end)) = effective_range in
       let ttime = T.current_time () in
       let new_inner_map =
-        let inner_map = Transacted.at_time ttime timeline in
-        Effective.set_for_range (effective_start, effective_end) value inner_map
+        let inner_map =
+          match Transacted.at_time timeline ttime with
+          | Some(inner_map) -> inner_map
+          | None -> Effective.empty
+        in Effective.set_for_range (effective_start, effective_end) value inner_map
       in
-      Transacted.set_at timeline new_inner_map ttime
+      Transacted.set_now timeline new_inner_map
 
-    let set_start_at effective_start value timeline =
+    let set_starting_at effective_start value timeline =
       set_for_range (effective_start, Effective(T.max_time)) value timeline
   end
 end

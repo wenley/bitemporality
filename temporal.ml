@@ -1,3 +1,4 @@
+open Time;;
 (**
  * This is the publicly-facing API to wrap a value to have the idea of history.
  *
@@ -17,14 +18,6 @@ module type Temporal = sig
     val at_time : 'a timed -> time -> 'a option
     val at_now : 'a timed -> 'a option
     val set_now : 'a timed -> 'a -> 'a timed
-    val set_at : 'a timed -> 'a -> time -> 'a timed
-  end
-
-  (* Client needs to provide a way to understand / interact with time *)
-  module type Time = sig
-    type time
-    val compare : time -> time -> int
-    val current_time : unit -> time
   end
 
   module Make (T : Time) : Value with type time = T.time
@@ -34,11 +27,11 @@ module Temporal : Temporal = struct
   module type Value = sig
     type time
     type 'a timed
+    val empty : 'a timed
     val current_time : unit -> time
     val at_time : 'a timed -> time -> 'a option
     val at_now : 'a timed -> 'a option
     val set_now : 'a timed -> 'a -> 'a timed
-    val set_at : 'a timed -> 'a -> time -> 'a timed
 
     (* This API is insufficient; does not allow for specifying arbitrary
     time-ranges for values; caller needs to reconstruct that API from these
