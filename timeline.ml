@@ -1,4 +1,20 @@
 open Time;;
+
+module type Timeline = sig
+  module type Value = sig
+    type time
+    type 'a timeline
+
+    val empty : 'a timeline
+    val at_time : time -> 'a timeline -> 'a option
+    val current_value : 'a timeline -> 'a option
+
+    val set_for_range : (time * time) -> 'a option -> 'a timeline -> 'a timeline
+  end
+
+  module Make (T:Time) : (Value with type time = T.time)
+end
+
 (**
  * This implements arbitrary history rewriting, as well as having sections of
  * time where no value exists.
@@ -15,7 +31,7 @@ open Time;;
  * `TRangeMap.find_opt` and do another layer of pattern matching rather than
  * the current, simpler `TRangeMap.find`).
  *)
-module EffectiveDating = struct
+module MapTimeline : Timeline = struct
   module type Value = sig
     type time
     type 'a timeline

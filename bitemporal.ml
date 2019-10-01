@@ -1,6 +1,6 @@
 open Time;;
 open History;;
-open Effective_dating;;
+open Timeline;;
 (**
  * Work in Progress, but fleshes out a couple tricky challenges.
  *
@@ -37,7 +37,7 @@ module Bitemporal = struct
 
   module Make (T:Time) : (Value with type time = T.time) = struct
     module Transacted = MapHistory.Make(T)
-    module Effective = EffectiveDating.Make(T)
+    module Effective = MapTimeline.Make(T)
 
     type time = T.time
     type effective_time = Effective of time
