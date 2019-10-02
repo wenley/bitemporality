@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  effective_start: 2019-10-01 22:08:06
+  effective_stop: 2019-10-01 22:08:06
+  uuid: MyString
+
+two:
+  effective_start: 2019-10-01 22:08:06
+  effective_stop: 2019-10-01 22:08:06
+  uuid: MyString
