@@ -65,3 +65,28 @@ module MapHistory : History = struct
     let set_now history value = set_at history value (current_time ())
   end
 end
+
+module type Database = sig
+  type table
+end
+
+module DatabaseHistory : History = struct
+  include BaseHistory
+
+  module Make (T:Time) (DB:Database) : (Value with type time = T.time) = struct
+    type time = T.time
+    type 'a history = DB.table
+
+    let empty = DB.empty_table
+    let current_time = T.current_time
+  end
+end
+
+module type ImmutableDatabase = sig
+  type record
+  type row
+
+  val serialize : record -> row
+  val diff : record -> record -> row
+  val commit : row -> unit
+end
