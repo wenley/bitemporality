@@ -84,7 +84,8 @@ module Bitemporal
           latest_timeline&.update!(transaction_stop: current_time)
           Timeline.create!(
             uuid: uuid,
-            versions: versions_to_keep,
+            timeline_events: versions_to_keep.map { |v| TimelineEvent.new(version: v) },
+            transaction_start: current_time,
           )
         end
       end

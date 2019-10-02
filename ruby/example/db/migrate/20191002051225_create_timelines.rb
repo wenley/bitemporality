@@ -5,7 +5,7 @@ class CreateTimelines < ActiveRecord::Migration[6.0]
       t.datetime :transaction_stop
       t.string :uuid
 
-      t.index :uuid, unique: true
+      t.index :uuid
       t.index :transaction_start
       t.index :transaction_stop
 

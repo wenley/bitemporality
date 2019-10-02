@@ -14,11 +14,12 @@ ActiveRecord::Schema.define(version: 2019_10_02_051318) do
 
   create_table "timeline_events", force: :cascade do |t|
     t.integer "timeline_id", null: false
+    t.string "version_type", null: false
     t.integer "version_id", null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
     t.index ["timeline_id"], name: "index_timeline_events_on_timeline_id"
-    t.index ["version_id"], name: "index_timeline_events_on_version_id"
+    t.index ["version_type", "version_id"], name: "index_timeline_events_on_version_type_and_version_id"
   end
 
   create_table "timelines", force: :cascade do |t|
@@ -29,7 +30,7 @@ ActiveRecord::Schema.define(version: 2019_10_02_051318) do
     t.datetime "updated_at", precision: 6, null: false
     t.index ["transaction_start"], name: "index_timelines_on_transaction_start"
     t.index ["transaction_stop"], name: "index_timelines_on_transaction_stop"
-    t.index ["uuid"], name: "index_timelines_on_uuid", unique: true
+    t.index ["uuid"], name: "index_timelines_on_uuid"
   end
 
   create_table "toy_versions", force: :cascade do |t|
@@ -40,9 +41,8 @@ ActiveRecord::Schema.define(version: 2019_10_02_051318) do
     t.datetime "updated_at", precision: 6, null: false
     t.index ["effective_start"], name: "index_toy_versions_on_effective_start"
     t.index ["effective_stop"], name: "index_toy_versions_on_effective_stop"
-    t.index ["uuid"], name: "index_toy_versions_on_uuid", unique: true
+    t.index ["uuid"], name: "index_toy_versions_on_uuid"
   end
 
   add_foreign_key "timeline_events", "timelines"
-  add_foreign_key "timeline_events", "versions"
 end

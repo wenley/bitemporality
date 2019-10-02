@@ -7,7 +7,7 @@ class CreateToyVersions < ActiveRecord::Migration[6.0]
 
       t.index :effective_start
       t.index :effective_stop
-      t.index :uuid, unique: true
+      t.index :uuid
 
       t.timestamps
     end
