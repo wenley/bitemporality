@@ -8,7 +8,9 @@ module Bitemporal
     # Configuration
     # - - - - - - - - - - - - - - -
 
-    Value = Struct.new(:transacted_at, :effective_since, :value)
+    def self.from_version(transacted_at:, effective_since:, version:)
+      raise NotImplementedError, "#{self.name}.from_version"
+    end
 
     def included(api_klass)
       if api_klass <= ActiveRecord::Base
@@ -29,11 +31,13 @@ module Bitemporal
     # - - - - - - - - - - - - - - -
 
     def self.at_time(uuid:, transaction_time:, effective_time:)
-      query(
+      version = query(
         transaction_time: transaction_time,
         effective_time: effective_time,
         inner_query: @version_class.where(uuid: uuid),
-      )
+      ).first
+
+      from_version(version)
     end
 
     def self.update_for_range(uuid:, effective_start:, effective_stop:, data:)
@@ -78,32 +82,77 @@ module Bitemporal
     # - - - - - - - - - - - - - - -
 
     def self.timeline_at(uuid:, transaction_time:)
+      timeline = Timeline.
+        where(uuid: uuid).
+        at_time(transaction_time).
+        first
 
+      timeline.versions.order(effective_start: :asc).map do |version|
+        from_version(
+          transaction_time: timeline.transaction_start,
+          effective_since: version.effective_start,
+          version: version,
+        )
+      end
     end
 
     def self.history_at(uuid:, effective_time:)
+      timelines = Timeline.
+        where(uuid: uuid).
+        joins(:versions).
+        merge(@version_class.where(uuid: uuid).at_time(effective_time)).
+        order(transaction_start: :asc)
 
+      timelines.map do |timeline|
+        version = timeline.versions.at_time(effective_time)
+
+        from_version(
+          transaction_time: timeline.transaction_start,
+          effective_since: version.effective_start,
+          version: version,
+        )
+      end
     end
 
     # - - - - - - - - - - - - - - -
     # Bulk Query Operations
     # - - - - - - - - - - - - - - -
+
     def self.query(transaction_time:, effective_time:, inner_query:)
-      case inner_query
-      when Proc
-        # Recommended; required if making version_class private to callers
-        Timeline.
-          at_time(transaction_time).
-          merge(inner_query.call(@version_class.at_time(effective_time)))
-      when ActiveRecord::Relation
-        # Not recommended; requires version_class to be public to callers
-        Timeline.
-          at_time(transaction_time).
-          merge(@version_class.at_time(effective_time)).
-          merge(inner_query)
-      else
-        raise ArgumentError, 'inner_query must be a Proc or Relation'
+      timelines =
+        case inner_query
+        when Proc
+          # Recommended; required if making version_class private to callers
+          Timeline.
+            at_time(transaction_time).
+            joins(:versions).
+            merge(inner_query.call(@version_class.at_time(effective_time)))
+
+        when ActiveRecord::Relation
+          # Not recommended; requires version_class to be public to callers
+          Timeline.
+            at_time(transaction_time).
+            joins(:versions).
+            merge(@version_class.at_time(effective_time)).
+            merge(inner_query)
+        else
+          raise ArgumentError, 'inner_query must be a Proc or Relation'
+        end
+
+      timelines.map do |timeline|
+        version = timeline.versions.at_time(effective_time)
+
+        from_version(
+          transaction_time: timeline.transaction_start,
+          effective_since: version.effective_start,
+          version: version,
+        )
       end
+    end
+
+    # More powerful API that will return potentially 2-time-dimensional data
+    # Callers should be very careful about how they process the data returned
+    def self.query_across_time(inner_query:, transaction_time: nil, effective_time: nil)
     end
   end
 end
