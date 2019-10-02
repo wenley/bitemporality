@@ -6,11 +6,11 @@ module Bitemporal
 
     def Versioned.included(active_record_class)
       if !active_record_class.class == Class
-        raise ArgumentError, 'Versioned should only be directly included on classes'
+        raise ArgumentError, 'Bitemporal::Versioned should only be directly included on classes'
       end
 
       if !(active_record_class <= ActiveRecord::Base)
-        raise ArgumentError, 'Versioned classes should inherit from ActiveRecord::Base'
+        raise ArgumentError, 'Bitemporal::Versioned classes should inherit from ActiveRecord::Base'
       end
 
       missing_columns = REQUIRED_COLUMNS - active_record_class.column_names
