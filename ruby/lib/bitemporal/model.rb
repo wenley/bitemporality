@@ -61,7 +61,7 @@ module Bitemporal
           following_version = version_at_time(latest_timeline.versions, effective_stop)
 
           versions_to_keep = latest_timeline.versions.select do |version|
-            version.effective_stop <= effective_start &&
+            version.effective_stop <= effective_start ||
               version.effective_start >= effective_stop
           end
           # Fill the time gap
@@ -146,9 +146,9 @@ module Bitemporal
           at_time(transaction_time).
           first
 
-        timeline.versions.order(effective_start: :asc).map do |version|
+        timeline.versions.sort_by(&:effective_start).map do |version|
           from_version(
-            transaction_time: timeline.transaction_start,
+            transacted_at: timeline.transaction_start,
             effective_since: version.effective_start,
             version: version,
           )
@@ -164,10 +164,11 @@ module Bitemporal
           order(transaction_start: :asc)
 
         timelines.map do |timeline|
-          version = timeline.versions.at_time(effective_time)
+          # This is inefficient!
+          version = version_at_time(timeline.versions, effective_time)
 
           from_version(
-            transaction_time: timeline.transaction_start,
+            transacted_at: timeline.transaction_start,
             effective_since: version.effective_start,
             version: version,
           )

@@ -11,6 +11,7 @@ module Bitemporal
 
       active_record_class.class_eval do
         validate :no_changes, on: :update
+        validate :no_destroy, on: :destroy
       end
     end
 
@@ -18,6 +19,10 @@ module Bitemporal
       if changed?
         errors.add(:base, 'cannot be updated')
       end
+    end
+
+    def no_destroy
+      throw :abort
     end
   end
 end

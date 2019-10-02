@@ -17,8 +17,8 @@ module Bitemporal
     validate :timeline_events_have_same_version_type
 
     def versions
-      # This is terribly inefficient!
-      timeline_events.map(&:version)
+      timeline_events.first.version_type.constantize.
+        where(id: timeline_events.map(&:version_id))
     end
 
     def timeline_events_have_same_version_type
