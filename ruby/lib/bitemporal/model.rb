@@ -4,6 +4,8 @@ require_relative './versioned'
 module Bitemporal
   # To be included into
   module Model
+    INFINITY = DateTime.new(3000, 1, 1).freeze
+
     def Model.included(api_klass)
       if api_klass <= ActiveRecord::Base
         raise ArgumentError, 'Bitemporal::Model should not be included on ActiveRecord classes'
@@ -34,13 +36,18 @@ module Bitemporal
       # - - - - - - - - - - - - - - -
 
       def at_time(uuid:, transaction_time:, effective_time:)
-        version = query(
+        query(
           transaction_time: transaction_time,
           effective_time: effective_time,
           inner_query: @version_class.where(uuid: uuid),
         ).first
+      end
 
-        from_version(version)
+      def version_at_time(versions, effective_time)
+        versions.find do |version|
+          version.effective_start <= effective_time &&
+            effective_time < version.effective_stop
+        end
       end
 
       def update_for_range(uuid:, effective_start:, effective_stop:, data:)
@@ -50,8 +57,8 @@ module Bitemporal
         if latest_timeline.nil?
           versions_to_keep = []
         else
-          prior_version = latest_timeline.versions.at_time(effective_start)
-          following_version = latest_timeline.versions.at_time(effective_stop)
+          prior_version = version_at_time(latest_timeline.versions, effective_start)
+          following_version = version_at_time(latest_timeline.versions, effective_stop)
 
           versions_to_keep = latest_timeline.versions.select do |version|
             version.effective_stop <= effective_start &&
@@ -60,14 +67,14 @@ module Bitemporal
           # Fill the time gap
           if prior_version
             versions_to_keep << @version_class.new(
-              prior_version.attributes.merge(
+              prior_version.attributes.reject { |k, _| k == 'id' }.merge(
                 effective_stop: effective_start,
               ),
             )
           end
           if following_version
             versions_to_keep << @version_class.new(
-              following_version.attributes.merge(
+              following_version.attributes.reject { |k, _| k == 'id' }.merge(
                 effective_start: effective_stop,
               ),
             )
@@ -81,11 +88,12 @@ module Bitemporal
         ))
 
         Timeline.transaction do
-          latest_timeline&.update!(transaction_stop: current_time)
+          latest_timeline&.update_columns(transaction_stop: current_time)
           Timeline.create!(
             uuid: uuid,
             timeline_events: versions_to_keep.map { |v| TimelineEvent.new(version: v) },
             transaction_start: current_time,
+            transaction_stop: INFINITY,
           )
         end
       end
@@ -96,8 +104,8 @@ module Bitemporal
 
         return unless latest_timeline
 
-        prior_version = latest_timeline.versions.at_time(effective_start)
-        following_version = latest_timeline.versions.at_time(effective_stop)
+        prior_version = version_at_time(latest_timeline.versions, effective_start)
+        following_version = version_at_time(latest_timeline.versions, effective_stop)
 
         versions_to_keep = latest_timeline.versions.select do |version|
           version.effective_stop <= effective_start &&
@@ -106,14 +114,14 @@ module Bitemporal
 
         if prior_version
           versions_to_keep << @version_class.new(
-            prior_version.attributes.merge(
+            prior_version.attributes.reject { |k, _| k == 'id' }.merge(
               effective_stop: effective_start,
             ),
           )
         end
         if following_version
           versions_to_keep << @version_class.new(
-            following_version.attributes.merge(
+            following_version.attributes.reject { |k, _| k == 'id' }.merge(
               effective_start: effective_stop,
             ),
           )
@@ -150,7 +158,8 @@ module Bitemporal
       def history_at(uuid:, effective_time:)
         timelines = Timeline.
           where(uuid: uuid).
-          joins(:versions).
+          joins(:timeline_events).
+          joins("INNER JOIN #{@version_class.table_name} ON timeline_events.version_id = #{@version_class.table_name}.id AND timeline_events.version_type = '#{@version_class.name}'").
           merge(@version_class.where(uuid: uuid).at_time(effective_time)).
           order(transaction_start: :asc)
 
@@ -176,14 +185,16 @@ module Bitemporal
             # Recommended; required if making version_class private to callers
             Timeline.
               at_time(transaction_time).
-              joins(:versions).
+              joins(:timeline_events).
+              joins("INNER JOIN #{@version_class.table_name} ON timeline_events.version_id = #{@version_class.table_name}.id AND timeline_events.version_type = '#{@version_class.name}'").
               merge(inner_query.call(@version_class.at_time(effective_time)))
 
           when ActiveRecord::Relation
             # Not recommended; requires version_class to be public to callers
             Timeline.
               at_time(transaction_time).
-              joins(:versions).
+              joins(:timeline_events).
+              joins("INNER JOIN #{@version_class.table_name} ON timeline_events.version_id = #{@version_class.table_name}.id AND timeline_events.version_type = '#{@version_class.name}'").
               merge(@version_class.at_time(effective_time)).
               merge(inner_query)
           else
@@ -191,7 +202,7 @@ module Bitemporal
           end
 
         timelines.map do |timeline|
-          version = timeline.versions.at_time(effective_time)
+          version = version_at_time(timeline.versions, effective_time)
 
           from_version(
             transaction_time: timeline.transaction_start,
