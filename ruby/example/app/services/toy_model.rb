@@ -6,7 +6,7 @@ class ToyModel
   version_class ToyVersion
 
   def self.from_version(transacted_at:, effective_since:, version:)
-    new(version.inner_value)
+    new(version.id)
   end
 
   def initialize(inner_value)

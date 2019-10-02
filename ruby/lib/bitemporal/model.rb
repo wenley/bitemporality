@@ -205,7 +205,7 @@ module Bitemporal
           version = version_at_time(timeline.versions, effective_time)
 
           from_version(
-            transaction_time: timeline.transaction_start,
+            transacted_at: timeline.transaction_start,
             effective_since: version.effective_start,
             version: version,
           )
