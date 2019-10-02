@@ -6,13 +6,15 @@ module Bitemporal
   class Timeline < ActiveRecord::Base
     include ImmutableRecord
 
+    self.table_name = 'timelines'
+
     has_many :timeline_events, class_name: 'TimelineEvent'
     has_many :versions, through: :timeline_events
 
     scope :at_time, ->(time) { where('transaction_start <= ? AND ? < transaction_stop', time, time) }
 
-    validates :versions_have_same_uuid
-    validates :versions_dont_overlap_effective_ranges
+    validate :versions_have_same_uuid
+    validate :versions_dont_overlap_effective_ranges
 
     def versions_have_same_uuid
       uuids = versions.map(&:uuid).uniq

@@ -2,7 +2,7 @@ require 'active_record'
 
 module Bitemporal
   module Versioned
-    REQUIRED_COLUMNS = [:effective_start, :effective_stop, :uuid]
+    REQUIRED_COLUMNS = %w(effective_start effective_stop uuid)
 
     def Versioned.included(active_record_class)
       if !active_record_class.class == Class
@@ -18,8 +18,10 @@ module Bitemporal
         raise ArgumentError, "Versioned classes must have columns #{REQUIRED_COLUMNS}. #{active_record_class} is missing #{missing_columns}"
       end
 
-      active_record_class.scope :at_time, ->(time) { where('effective_start <= ? AND ? < effective_stop', time, time) }
-      active_record_class.include(ImmutableRecord)
+      active_record_class.class_eval do
+        include(ImmutableRecord)
+        scope :at_time, ->(time) { where('effective_start <= ? AND ? < effective_stop', time, time) }
+      end
     end
   end
 end

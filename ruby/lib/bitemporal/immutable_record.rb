@@ -9,7 +9,9 @@ module Bitemporal
         raise ArgumentError, 'Versioned classes should inherit from ActiveRecord::Base'
       end
 
-      active_record_class.validates :no_changes, on: :update
+      active_record_class.class_eval do
+        validate :no_changes, on: :update
+      end
     end
 
     def no_changes
