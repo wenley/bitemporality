@@ -5,18 +5,42 @@ RSpec.describe Bitemporal::ImmutableRecord do
     make_sqlite_database
     ActiveRecord::Base.connection.execute(
       <<-SQL
+        DROP TABLE IF EXISTS immutable_addresses;
+      SQL
+    )
+    ActiveRecord::Base.connection.execute(
+      <<-SQL
         CREATE TABLE IF NOT EXISTS immutable_addresses (
           street_1 TEXT
         )
       SQL
     )
   end
-  class ImmutableAddress < ActiveRecord::Base
-    include Bitemporal::ImmutableRecord
+  after(:all) do
+    ActiveRecord::Base.connection.execute(
+      <<-SQL
+        DROP TABLE immutable_addresses
+      SQL
+    )
+  end
+
+  after do
+    ActiveRecord::Base.connection.execute(
+      <<-SQL
+        DELETE FROM immutable_addresses
+      SQL
+    )
+  end
+
+  let(:klass) do
+    Class.new(ActiveRecord::Base) do
+      self.table_name = 'immutable_addresses'
+      include Bitemporal::ImmutableRecord
+    end
   end
 
   let(:instance) do
-    ImmutableAddress.create!(
+    klass.create!(
       street_1: '1 Infinite Loop',
     )
   end
