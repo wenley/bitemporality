@@ -2,10 +2,7 @@ require 'spec_helper'
 
 RSpec.describe Bitemporal::ImmutableRecord do
   before do
-    ActiveRecord::Base.establish_connection(
-      adapter:  'sqlite3',
-      database: 'tmp/db/test.sqlite3',
-    )
+    make_sqlite_database
     ActiveRecord::Base.connection.execute(
       <<-SQL
         CREATE TABLE IF NOT EXISTS immutable_addresses (
