@@ -155,7 +155,7 @@ module Bitemporal
           new_following_version: new_following_version,
         }
       end
-      private_method :partition_versions
+      private :partition_versions
 
       # - - - - - - - - - - - - - - -
       # Timeline Operations
@@ -166,6 +166,8 @@ module Bitemporal
           where(uuid: uuid).
           at_time(transaction_time).
           first
+
+        return [] if timeline.nil?
 
         timeline.versions.sort_by(&:effective_start).map do |version|
           from_version(
