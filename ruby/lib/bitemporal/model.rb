@@ -49,6 +49,7 @@ module Bitemporal
             effective_time < version.effective_stop
         end
       end
+      private :version_at_time
 
       def update_for_range(uuid:, effective_start:, effective_stop:, data:)
         current_time = Time.now
@@ -57,28 +58,11 @@ module Bitemporal
         if latest_timeline.nil?
           versions_to_keep = []
         else
-          prior_version = version_at_time(latest_timeline.versions, effective_start)
-          following_version = version_at_time(latest_timeline.versions, effective_stop)
-
-          versions_to_keep = latest_timeline.versions.select do |version|
-            version.effective_stop <= effective_start ||
-              version.effective_start >= effective_stop
-          end
-          # Fill the time gap
-          if prior_version
-            versions_to_keep << @version_class.new(
-              prior_version.attributes.reject { |k, _| k == 'id' }.merge(
-                effective_stop: effective_start,
-              ),
-            )
-          end
-          if following_version
-            versions_to_keep << @version_class.new(
-              following_version.attributes.reject { |k, _| k == 'id' }.merge(
-                effective_start: effective_stop,
-              ),
-            )
-          end
+          versions_to_keep = versions_without_range(
+            versions: latest_timeline.versions,
+            effective_start: effective_start,
+            effective_stop: effective_stop,
+          )
         end
 
         versions_to_keep << @version_class.new(data.merge(
@@ -104,28 +88,11 @@ module Bitemporal
 
         return unless latest_timeline
 
-        prior_version = version_at_time(latest_timeline.versions, effective_start)
-        following_version = version_at_time(latest_timeline.versions, effective_stop)
-
-        versions_to_keep = latest_timeline.versions.select do |version|
-          version.effective_stop <= effective_start &&
-            version.effective_start >= effective_stop
-        end
-
-        if prior_version
-          versions_to_keep << @version_class.new(
-            prior_version.attributes.reject { |k, _| k == 'id' }.merge(
-              effective_stop: effective_start,
-            ),
-          )
-        end
-        if following_version
-          versions_to_keep << @version_class.new(
-            following_version.attributes.reject { |k, _| k == 'id' }.merge(
-              effective_start: effective_stop,
-            ),
-          )
-        end
+        versions_to_keep = versions_without_range(
+          versions: latest_timeline.versions,
+          effective_start: effective_start,
+          effective_stop: effective_stop,
+        )
 
         Timeline.transaction do
           latest_timeline.update!(transaction_stop: current_time)
@@ -135,6 +102,60 @@ module Bitemporal
           )
         end
       end
+
+      def versions_without_range(versions:, effective_start:, effective_stop:)
+        partition = partition_versions(
+          versions: latest_timeline.versions,
+          effective_start: effective_start,
+          effective_stop: effective_stop,
+        )
+        versions_to_keep = partition[:outside_range]
+
+        versions_to_keep << partition[:new_prior_version] if partition[:new_prior_version]
+        versions_to_keep << partition[:new_following_version] if partition[:new_following_version]
+
+        versions_to_keep
+      end
+      private :versions_without_range
+
+      def partition_versions(versions:, effective_start:, effective_stop:)
+
+        prior_version = version_at_time(latest_timeline.versions, effective_start)
+        following_version = version_at_time(latest_timeline.versions, effective_stop)
+
+        outside_range, contained_by_range = latest_timeline.versions.partition do |version|
+          version.effective_stop <= effective_start &&
+            version.effective_start >= effective_stop
+        end
+
+        if prior_version
+          new_prior_version = @version_class.new(
+            prior_version.attributes.reject { |k, _| k == 'id' }.merge(
+              effective_stop: effective_start,
+            ),
+          )
+        else
+          new_prior_version = nil
+        end
+
+        if following_version
+          new_following_version = @version_class.new(
+            following_version.attributes.reject { |k, _| k == 'id' }.merge(
+              effective_start: effective_stop,
+            ),
+          )
+        else
+          new_following_version = nil
+        end
+
+        {
+          contained_by_range: contained_by_range,
+          outside_range: outside_range,
+          new_prior_version: new_prior_version,
+          new_following_version: new_following_version,
+        }
+      end
+      private_method :partition_versions
 
       # - - - - - - - - - - - - - - -
       # Timeline Operations
