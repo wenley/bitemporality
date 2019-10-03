@@ -20,6 +20,7 @@ GEM
       tzinfo (~> 1.1)
     arel (7.1.4)
     concurrent-ruby (1.1.5)
+    database_cleaner (1.7.0)
     diff-lcs (1.3)
     i18n (1.6.0)
       concurrent-ruby (~> 1.0)
@@ -49,6 +50,7 @@ PLATFORMS
 DEPENDENCIES
   bitemporality!
   bundler (~> 1.17)
+  database_cleaner
   rake (~> 10.0)
   rspec (~> 3.0)
   sqlite3 (~> 1.3.13)
