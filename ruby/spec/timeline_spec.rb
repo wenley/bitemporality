@@ -117,7 +117,24 @@ RSpec.describe Bitemporal::Timeline do
     let(:version_2_uuid) { uuid }
     let(:version_2_start) { version_1.effective_stop }
 
-    it { expect(subject.errors).to be_empty }
+    it { is_expected.to be_valid }
+
+    context 'mixed version types' do
+      let(:timeline_events) do
+        [
+          Bitemporal::TimelineEvent.new(
+            version_id: 1,
+            version_type: 'VersionedAddress',
+          ),
+          Bitemporal::TimelineEvent.new(
+            version_id: 2,
+            version_type: 'OtherThing',
+          ),
+        ]
+      end
+
+      it { is_expected.to_not be_valid }
+    end
 
     context 'versions have different UUIDs' do
       let(:version_2_uuid) { 'abcdef' }
