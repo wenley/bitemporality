@@ -74,7 +74,7 @@ RSpec.describe Bitemporal::Timeline do
     end
 
     subject do
-      described_class.create(
+      described_class.create!(
         uuid: timeline_uuid,
         timeline_events: timeline_events,
         transaction_start: DateTime.new(2019, 1, 1),
