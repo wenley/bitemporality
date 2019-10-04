@@ -8,7 +8,7 @@ RSpec.describe Bitemporal::Timeline do
   after(:all) do
     SpecTables.drop_table('timelines')
   end
-  let(:uuid) { '123456' }
+  let(:uuid) { '123456a' }
 
   describe '.at_time' do
     subject { described_class.at_time(query_time) }
