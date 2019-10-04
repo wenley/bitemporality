@@ -4,6 +4,7 @@ module SpecTables
       ActiveRecord::Base.connection.execute(
         <<-SQL
           CREATE TABLE IF NOT EXISTS versioned_addresses (
+            id INTEGER PRIMARY KEY,
             uuid string NOT NULL,
             effective_start datetime NOT NULL,
             effective_stop datetime NOT NULL,
