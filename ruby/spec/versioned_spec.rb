@@ -1,29 +1,12 @@
 require 'spec_helper'
+require 'support/spec_tables'
 
 RSpec.describe Bitemporal::Versioned do
   before(:all) do
-    ActiveRecord::Base.connection.execute(
-      <<-SQL
-        DROP TABLE IF EXISTS versioned_addresses
-      SQL
-    )
-    ActiveRecord::Base.connection.execute(
-      <<-SQL
-        CREATE TABLE IF NOT EXISTS versioned_addresses (
-          uuid string NOT NULL,
-          effective_start datetime NOT NULL,
-          effective_stop datetime NOT NULL,
-          street_1 TEXT
-        )
-      SQL
-    )
+    SpecTables.create_versioned_addresses_table
   end
   after(:all) do
-    ActiveRecord::Base.connection.execute(
-      <<-SQL
-        DROP TABLE versioned_addresses
-      SQL
-    )
+    SpecTables.drop_versioned_addresses_table
   end
 
   let(:klass) do
