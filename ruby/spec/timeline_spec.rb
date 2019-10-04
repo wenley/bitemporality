@@ -85,11 +85,16 @@ RSpec.describe Bitemporal::Timeline do
     let(:timeline_events) { versions.map { |v| Bitemporal::TimelineEvent.new(version: v) } }
     let(:versions) { [version_1, version_2] }
 
-    let(:versioned_address_class) do
-      Class.new(ActiveRecord::Base) do
-        self.table_name = 'versioned_addresses'
-        include Bitemporal::Versioned
-      end
+    let!(:versioned_address_class) do
+      Object.const_set(
+        'VersionedAddress',
+        Class.new(ActiveRecord::Base) do
+          self.table_name = 'versioned_addresses'
+          include Bitemporal::Versioned
+        end,
+      )
+
+      VersionedAddress
     end
     let(:version_1) do
       versioned_address_class.create!(
@@ -102,7 +107,7 @@ RSpec.describe Bitemporal::Timeline do
     let(:version_2) do
       versioned_address_class.create!(
         uuid: version_2_uuid,
-        effective_start: DateTime.new(2019, 2, 1),
+        effective_start: version_2_start,
         effective_stop: DateTime.new(2019, 3, 1),
         street_1: '123 Infinity Loop',
       )
@@ -110,7 +115,20 @@ RSpec.describe Bitemporal::Timeline do
 
     let(:version_1_uuid) { uuid }
     let(:version_2_uuid) { uuid }
+    let(:version_2_start) { version_1.effective_stop }
 
-    it { is_expected.to be_valid }
+    it { expect(subject.errors).to be_empty }
+
+    context 'versions have different UUIDs' do
+      let(:version_2_uuid) { 'abcdef' }
+
+      it { is_expected.to_not be_valid }
+    end
+
+    context 'overlapping ranges' do
+      let(:version_2_start) { version_1.effective_stop - 1.day }
+
+      it { is_expected.to_not be_valid }
+    end
   end
 end
