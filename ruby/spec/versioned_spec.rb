@@ -2,15 +2,14 @@ require 'spec_helper'
 
 RSpec.describe Bitemporal::Versioned do
   before(:all) do
-    make_sqlite_database
     ActiveRecord::Base.connection.execute(
       <<-SQL
-        DROP TABLE IF EXISTS immutable_addresses;
+        DROP TABLE IF EXISTS versioned_addresses
       SQL
     )
     ActiveRecord::Base.connection.execute(
       <<-SQL
-        CREATE TABLE IF NOT EXISTS immutable_addresses (
+        CREATE TABLE IF NOT EXISTS versioned_addresses (
           uuid string NOT NULL,
           effective_start datetime NOT NULL,
           effective_stop datetime NOT NULL,
@@ -22,22 +21,14 @@ RSpec.describe Bitemporal::Versioned do
   after(:all) do
     ActiveRecord::Base.connection.execute(
       <<-SQL
-        DROP TABLE immutable_addresses
-      SQL
-    )
-  end
-
-  after do
-    ActiveRecord::Base.connection.execute(
-      <<-SQL
-        DELETE FROM immutable_addresses
+        DROP TABLE versioned_addresses
       SQL
     )
   end
 
   let(:klass) do
     Class.new(ActiveRecord::Base) do
-      self.table_name = 'immutable_addresses'
+      self.table_name = 'versioned_addresses'
       include Bitemporal::Versioned
     end
   end

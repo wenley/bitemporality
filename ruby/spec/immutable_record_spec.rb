@@ -1,11 +1,10 @@
 require 'spec_helper'
 
 RSpec.describe Bitemporal::ImmutableRecord do
-  before do
-    make_sqlite_database
+  before(:all) do
     ActiveRecord::Base.connection.execute(
       <<-SQL
-        DROP TABLE IF EXISTS immutable_addresses;
+        DROP TABLE IF EXISTS immutable_addresses
       SQL
     )
     ActiveRecord::Base.connection.execute(
@@ -20,14 +19,6 @@ RSpec.describe Bitemporal::ImmutableRecord do
     ActiveRecord::Base.connection.execute(
       <<-SQL
         DROP TABLE immutable_addresses
-      SQL
-    )
-  end
-
-  after do
-    ActiveRecord::Base.connection.execute(
-      <<-SQL
-        DELETE FROM immutable_addresses
       SQL
     )
   end
