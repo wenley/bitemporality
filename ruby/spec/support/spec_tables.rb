@@ -13,10 +13,23 @@ module SpecTables
       )
     end
 
-    def drop_versioned_addresses_table
+    def drop_table(table_name)
       ActiveRecord::Base.connection.execute(
         <<-SQL
-          DROP TABLE versioned_addresses
+          DROP TABLE #{table_name}
+        SQL
+      )
+    end
+
+    def create_timelines_table
+      ActiveRecord::Base.connection.execute(
+        <<-SQL
+          CREATE TABLE IF NOT EXISTS timelines (
+            id INTEGER PRIMARY KEY,
+            uuid string NOT NULL,
+            transaction_start datetime NOT NULL,
+            transaction_stop datetime NOT NULL
+          )
         SQL
       )
     end

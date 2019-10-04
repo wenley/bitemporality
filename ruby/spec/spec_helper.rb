@@ -3,7 +3,6 @@ Bundler.setup
 
 require 'bitemporal'
 require 'database_cleaner'
-require 'support/spec_tables'
 
 RSpec.configure do |config|
   config.before(:suite) do
