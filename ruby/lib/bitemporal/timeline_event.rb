@@ -8,5 +8,7 @@ module Bitemporal
 
     belongs_to :timeline
     belongs_to :version, polymorphic: true
+
+    validates :timeline, presence: true
   end
 end

@@ -33,5 +33,19 @@ module SpecTables
         SQL
       )
     end
+
+    def create_timeline_events_table
+      ActiveRecord::Base.connection.execute(
+        <<-SQL
+          CREATE TABLE IF NOT EXISTS timeline_events (
+            id INTEGER PRIMARY KEY,
+            timeline_id INTEGER,
+            version_id INTEGER,
+            version_type STRING,
+            FOREIGN KEY(timeline_id) REFERENCES timelines(id)
+          )
+        SQL
+      )
+    end
   end
 end
