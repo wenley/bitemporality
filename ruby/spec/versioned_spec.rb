@@ -6,7 +6,7 @@ RSpec.describe Bitemporal::Versioned do
     SpecTables.create_versioned_addresses_table
   end
   after(:all) do
-    SpecTables.drop_versioned_addresses_table
+    SpecTables.drop_table('versioned_addresses')
   end
 
   let(:klass) do
